@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>納品書・請求書管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#1a1a2e;--warm:#8b4513;--accent:#c8a96e;--accent2:#e8d5b0;--bg:#faf8f4;--card:#fff;--border:#ddd5c8;--success:#3a7d44;--danger:#c0392b;--muted:#888;--radius:14px;--shadow:0 2px 12px rgba(0,0,0,.09)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.app-header{background:var(--warm);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.app-header h1{font-size:18px;font-weight:700;letter-spacing:.05em}
+.header-nav{display:flex;gap:8px}
+.nav-btn{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.nav-btn:active{background:rgba(255,255,255,.4)}
+.screen{display:none;padding:20px;max-width:900px;margin:0 auto}
+.screen.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;color:var(--warm);border-bottom:2px solid var(--accent2);padding-bottom:10px;margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600;padding:12px 20px;font-size:15px;transition:opacity .1s}
+.btn:active{opacity:.7}
+.btn-primary{background:var(--warm);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;color:var(--warm);border:2px solid var(--warm)}
+.btn-gold{background:var(--accent);color:var(--ink)}
+.btn-warn{background:#e67e22;color:#fff}
+.btn-lg{padding:16px 28px;font-size:17px;border-radius:14px}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+.btn-block{width:100%}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;color:var(--ink);background:#fff}
+.form-input:focus{outline:none;border-color:var(--warm)}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:40px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+.client-card{background:var(--card);border:2.5px solid var(--border);border-radius:var(--radius);padding:20px 14px;text-align:center;cursor:pointer;transition:border-color .15s;box-shadow:var(--shadow)}
+.client-card:active,.client-card.selected{border-color:var(--warm);background:#fff5ee}
+.client-card .ci{font-size:32px;margin-bottom:8px}
+.client-card .cn{font-size:15px;font-weight:700}
+.client-card .ct{font-size:11px;color:var(--muted);margin-top:4px}
+.product-list{display:flex;flex-direction:column;gap:10px}
+.product-row{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:12px 14px}
+.product-row.has-qty{border-color:var(--accent);background:#fffbf5}
+.qty-controls{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.qty-btn{width:44px;height:44px;border-radius:50%;border:2px solid var(--warm);background:#fff;color:var(--warm);font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qty-btn:active{background:var(--warm);color:#fff}
+.qty-input{width:72px;height:44px;text-align:center;font-size:20px;font-weight:700;font-family:inherit;border:2px solid var(--border);border-radius:10px;color:var(--ink);background:#fff;-webkit-appearance:none}
+.qty-input:focus{outline:none;border-color:var(--warm);background:#fffbf5}
+.qty-input.has-value{border-color:var(--accent);background:#fffbf5;color:var(--warm)}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:var(--accent2);border-radius:10px;padding:4px}
+.tab-btn{flex:1;padding:10px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--warm)}
+.tab-btn.active{background:var(--warm);color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.list-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#fff}
+.list-item:last-child{border-bottom:none}
+.list-item-main{flex:1;min-width:0}
+.list-item-title{font-size:15px;font-weight:600}
+.list-item-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-return{background:#fde8e8;color:var(--danger)}
+.badge-normal{background:var(--accent2);color:var(--warm)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px;color:var(--warm)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.invoice-preview{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;max-height:55vh;overflow-y:auto}
+.month-table{width:100%;border-collapse:collapse}
+.month-table th{background:var(--accent2);padding:9px 10px;border:1px solid var(--border);font-size:13px;color:var(--warm)}
+.month-table td{padding:9px 10px;border:1px solid var(--border);font-size:13px}
+.return-input{width:70px;padding:6px 8px;border:2px solid var(--border);border-radius:6px;font-size:14px;text-align:center;font-family:inherit}
+.alert{padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:14px}
+.alert-info{background:#e8f4fd;color:#1a5276;border-left:4px solid #2980b9}
+.alert-success{background:#e9f7ef;color:#1e8449;border-left:4px solid #27ae60}
+.alert-warn{background:#fef9e7;color:#7d6608;border-left:4px solid #f1c40f}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.home-actions{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.action-tile{background:var(--card);border-radius:var(--radius);padding:24px 16px;text-align:center;cursor:pointer;box-shadow:var(--shadow);border:2.5px solid transparent}
+.action-tile:active{opacity:.8}
+.tile-icon{font-size:40px;margin-bottom:10px}
+.tile-label{font-size:16px;font-weight:700}
+.tile-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.tile-monthly{background:linear-gradient(135deg,#fff5ee,#ffe4c4);border-color:var(--accent)}
+.steps{display:flex;align-items:center;margin-bottom:20px}
+.step{flex:1;text-align:center;position:relative}
+.step-circle{width:32px;height:32px;border-radius:50%;background:var(--border);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;position:relative;z-index:1}
+.step.active .step-circle{background:var(--warm);color:#fff}
+.step.done .step-circle{background:var(--success);color:#fff}
+.step-label{font-size:11px;color:var(--muted);margin-top:4px;display:block}
+.step.active .step-label{color:var(--warm);font-weight:600}
+.step::before{content:'';position:absolute;top:16px;left:0;right:50%;height:2px;background:var(--border);z-index:0}
+.step::after{content:'';position:absolute;top:16px;left:50%;right:0;height:2px;background:var(--border);z-index:0}
+.step:first-child::before,.step:last-child::after{display:none}
+.step.done::after{background:var(--success)}
+.toggle-switch{position:relative;display:inline-block;width:48px;height:26px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.toggle-slider{background:var(--warm)}
+input:checked+.toggle-slider:before{transform:translateX(22px)}
+.tax-badge-inc8{background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700}
+.tax-badge-ex8{background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700}
+.tax-badge-ex10{background:#e3f2fd;color:#1565c0;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700}
+@media print{body>*:not(#print-area){display:none!important}#print-area{display:block!important;padding:10px}}
+#print-area{display:none}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:500;pointer-events:none;min-width:260px}
+</style>
+</head>
+<body>
+<div id="print-area"></div>
+<div id="toast"></div>
+
+<header class="app-header">
+  <h1 id="header-title">🍡 納品書管理</h1>
+  <nav class="header-nav">
+    <button class="nav-btn" onclick="showScreen('home')">ホーム</button>
+    <button class="nav-btn" onclick="showScreen('settings')">⚙ 設定</button>
+  </nav>
+</header>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <div class="card-title">📋 メインメニュー</div>
+    <div class="home-actions">
+      <div class="action-tile" onclick="startDelivery()"><div class="tile-icon">📦</div><div class="tile-label">納品書を作成</div><div class="tile-sub">取引先を選んで発行</div></div>
+      <div class="action-tile" onclick="showScreen('history')"><div class="tile-icon">📋</div><div class="tile-label">履歴・修正</div><div class="tile-sub">過去の伝票を確認・編集</div></div>
+    </div>
+    <div class="action-tile tile-monthly" onclick="showScreen('monthly')"><div class="tile-icon">🗓</div><div class="tile-label">月次締め処理</div><div class="tile-sub">月末の請求書発行・返品処理</div></div>
+  </div>
+  <div id="home-recent"></div>
+</div>
+
+<!-- DELIVERY -->
+<div id="screen-delivery" class="screen">
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-circle">1</div><span class="step-label">取引先</span></div>
+    <div class="step" id="step2"><div class="step-circle">2</div><span class="step-label">商品選択</span></div>
+    <div class="step" id="step3"><div class="step-circle">3</div><span class="step-label">確認・発行</span></div>
+  </div>
+  <div id="dstep1">
+    <div class="card"><div class="card-title">🏪 取引先を選択</div><div id="client-grid" class="client-grid"></div></div>
+    <button class="btn btn-outline btn-block" onclick="showScreen('home')">← ホームに戻る</button>
+  </div>
+  <div id="dstep2" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>🍡 商品を選択</span><span id="sel-client-badge" style="margin-left:auto;font-size:13px;background:var(--accent2);padding:4px 12px;border-radius:20px;color:var(--warm)"></span></div>
+      <div class="form-group"><label class="form-label">納品日</label>
+        <div class="grid-2">
+          <input type="date" id="delivery-date" class="form-input">
+          <select id="date-offset" class="form-input" onchange="applyDateOffset()">
+            <option value="0">当日</option><option value="1">翌日（+1日）</option>
+            <option value="2">2日後</option><option value="3">3日後</option><option value="7">1週間後</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">備考</label><input type="text" id="delivery-note" class="form-input" placeholder="任意のメモ"></div>
+    </div>
+    <div class="card"><div class="card-title">商品と数量</div><div id="product-list" class="product-list"></div></div>
+    <div class="card"><div class="card-title">💴 合計（税込）</div><div id="order-subtotal" style="font-size:20px;font-weight:700;text-align:right;color:var(--warm)">¥0</div></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="goToStep(1)">← 戻る</button>
+      <button class="btn btn-primary" style="flex:2" onclick="goToStep(3)">確認画面へ →</button>
+    </div>
+  </div>
+  <div id="dstep3" style="display:none">
+    <div class="card"><div class="card-title">📄 納品書プレビュー</div><div id="invoice-preview-content" class="invoice-preview"></div></div>
+    <div class="card">
+      <div class="card-title">📤 発行・保存</div>
+      <div class="grid-2" style="gap:10px">
+        <button class="btn btn-outline btn-block" onclick="printDelivery()">🖨 印刷</button>
+        <button class="btn btn-gold btn-block" onclick="downloadDeliveryExcel()">📊 Excel保存</button>
+      </div>
+      <button class="btn btn-success btn-block btn-lg" style="margin-top:12px" onclick="finalizeDelivery()">✅ 発行完了・保存</button>
+    </div>
+    <button class="btn btn-outline btn-block" style="margin-top:4px" onclick="goToStep(2)">← 商品選択に戻る</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="screen-history" class="screen">
+  <div class="card">
+    <div class="card-title">📋 納品書履歴・修正</div>
+    <div class="grid-2" style="margin-bottom:8px">
+      <select id="hist-filter-client" class="form-input" onchange="renderHistory()"><option value="">全取引先</option></select>
+      <input type="month" id="hist-filter-month" class="form-input" onchange="renderHistory()" placeholder="月を選択（空欄=全件）">
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">※ 月を空欄にすると全件表示されます。⚠ 空伝票は赤背景で表示されます。</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-sm btn-outline" onclick="clearHistoryFilter()">🔄 全件表示</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteEmptyDeliveries()">🗑 空伝票をまとめて削除</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+  <button class="btn btn-outline btn-block" onclick="showScreen('home')">← ホームに戻る</button>
+</div>
+
+<!-- MONTHLY -->
+<div id="screen-monthly" class="screen">
+  <div class="card">
+    <div class="card-title">🗓 月次締め処理</div>
+    <div class="grid-2" style="margin-bottom:14px">
+      <div class="form-group" style="margin:0"><label class="form-label">対象月</label><input type="month" id="monthly-month" class="form-input" onchange="clearMonthlyContent()"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">請求書フォーマット</label>
+        <select id="invoice-format" class="form-input">
+          <option value="standard">標準（インボイス対応）</option>
+          <option value="detail">明細型</option>
+          <option value="simple">シンプル</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="loadMonthlyData()">📊 集計を読み込む</button>
+    <div id="monthly-debug" style="margin-top:8px;font-size:12px;color:var(--muted);text-align:center"></div>
+  </div>
+  <div id="monthly-content"></div>
+  <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="showScreen('home')">← ホームに戻る</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="screen-settings" class="screen">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(this,'stab-company')">会社情報</button>
+    <button class="tab-btn" onclick="switchTab(this,'stab-clients')">取引先</button>
+    <button class="tab-btn" onclick="switchTab(this,'stab-products')">商品</button>
+    <button class="tab-btn" onclick="switchTab(this,'stab-misc')">その他</button>
+  </div>
+  <div id="stab-company" class="tab-content active">
+    <div class="card">
+      <div class="card-title">🏢 自社情報</div>
+      <div class="form-group"><label class="form-label">会社名・店舗名</label><input id="s-name" class="form-input" placeholder="例：和菓子処 山田屋"></div>
+      <div class="form-group"><label class="form-label">郵便番号</label><input id="s-zip" class="form-input" placeholder="例：123-4567"></div>
+      <div class="form-group"><label class="form-label">住所</label><input id="s-address" class="form-input"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">電話番号</label><input id="s-tel" class="form-input"></div>
+        <div class="form-group"><label class="form-label">FAX</label><input id="s-fax" class="form-input"></div>
+      </div>
+      <div class="form-group"><label class="form-label">代表者名</label><input id="s-owner" class="form-input"></div>
+      <div class="form-group"><label class="form-label">インボイス登録番号</label><input id="s-invoice-no" class="form-input" placeholder="例：T1234567890123"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">消費税率（%）</label><input id="s-tax-rate" class="form-input" type="number" value="10" min="0" max="30"></div>
+        <div class="form-group"><label class="form-label">宛名敬称</label>
+          <select id="s-honorific" class="form-input"><option value="御中">御中</option><option value="様">様</option><option value="">なし</option></select>
+        </div>
+      </div>
+      <div style="border-top:2px solid var(--accent2);margin:16px 0 14px;padding-top:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--warm);margin-bottom:12px">🏦 振込先情報</div>
+        <div class="form-group"><label class="form-label">銀行名</label><input id="s-bank-name" class="form-input" placeholder="例：北陸銀行"></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">支店名</label><input id="s-bank-branch" class="form-input"></div>
+          <div class="form-group"><label class="form-label">口座種別</label><select id="s-bank-type" class="form-input"><option value="普通">普通</option><option value="当座">当座</option></select></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">口座番号</label><input id="s-bank-no" class="form-input"></div>
+          <div class="form-group"><label class="form-label">口座名義（カナ）</label><input id="s-bank-holder" class="form-input"></div>
+        </div>
+        <div class="form-group"><label class="form-label">振込先備考</label><input id="s-bank-note" class="form-input" placeholder="例：振込手数料はご負担ください"></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveCompany()">💾 保存</button>
+    </div>
+  </div>
+  <div id="stab-clients" class="tab-content">
+    <div class="card">
+      <div class="card-title">➕ 取引先を追加</div>
+      <div class="form-group"><label class="form-label">取引先名</label><input id="nc-name" class="form-input" placeholder="例：〇〇スーパー"></div>
+      <div class="form-group"><label class="form-label">住所</label><input id="nc-address" class="form-input" placeholder="任意"></div>
+      <div class="form-group"><label class="form-label">担当者</label><input id="nc-contact" class="form-input" placeholder="任意"></div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:10px">月次返品処理あり
+          <label class="toggle-switch"><input type="checkbox" id="nc-return"><span class="toggle-slider"></span></label>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="addClient()">➕ 追加</button>
+    </div>
+    <div class="card"><div class="card-title">📋 登録済み取引先</div><div id="clients-list"></div></div>
+  </div>
+  <div id="stab-products" class="tab-content">
+    <div class="card">
+      <div class="card-title">➕ 商品を追加</div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">商品名</label><input id="np-name" class="form-input" placeholder="例：上生菓子"></div>
+        <div class="form-group"><label class="form-label">単価（円）</label><input id="np-price" class="form-input" type="number" placeholder="例：350"></div>
+      </div>
+      <div class="form-group"><label class="form-label">単位</label><input id="np-unit" class="form-input" placeholder="例：個" value="個"></div>
+      <div class="form-group"><label class="form-label">税区分</label>
+        <select id="np-tax" class="form-input">
+          <option value="inc8">8% 税込（軽減税率・内税）</option>
+          <option value="ex8">8% 税別（軽減税率・外税）</option>
+          <option value="ex10">10% 税別（標準税率・外税）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">取り扱い取引先（チェックした取引先のみに表示）</label>
+        <div id="np-clients" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:#faf8f4;border-radius:10px;border:2px solid var(--border);min-height:44px"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">※ 未チェック = 全取引先に表示</div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="addProduct()">➕ 追加</button>
+    </div>
+    <div class="card"><div class="card-title">📋 登録済み商品</div><div id="products-list"></div></div>
+  </div>
+  <div id="stab-misc" class="tab-content">
+    <div class="card">
+      <div class="card-title">⚙ その他の設定</div>
+      <div class="form-group"><label class="form-label">伝票番号の接頭辞</label><input id="s-prefix" class="form-input" placeholder="例：NO-" value="NO-"></div>
+      <div class="form-group"><label class="form-label">デフォルト日付オフセット</label>
+        <select id="s-offset" class="form-input"><option value="0">当日</option><option value="1">翌日</option><option value="2">2日後</option></select>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveMisc()">💾 保存</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂 データ管理</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-outline btn-block" onclick="exportData()">📤 データをエクスポート（JSON）</button>
+        <button class="btn btn-outline btn-block" onclick="document.getElementById('import-file').click()">📥 データをインポート</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="btn btn-warn btn-block" onclick="deduplicateDeliveries()">🔧 重複伝票を整理（不具合修正）</button>
+        <button class="btn btn-danger btn-sm btn-block" onclick="clearData()">🗑 全データを消去</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DB
+// ============================================================
+var DB_KEY = 'wagashi_v3';
+function emptyDB() {
+  return {
+    company:{name:'',zip:'',address:'',tel:'',fax:'',owner:'',invoiceNo:'',taxRate:10,honorific:'御中',
+             bankName:'',bankBranch:'',bankType:'普通',bankNo:'',bankHolder:'',bankNote:''},
+    clients:[], products:[], deliveries:[],
+    settings:{prefix:'NO-',offset:0}
+  };
+}
+function loadDB() { try{ return JSON.parse(localStorage.getItem(DB_KEY)) || emptyDB(); }catch(e){ return emptyDB(); } }
+function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+var db = loadDB();
+
+// ============================================================
+// MODAL
+// ============================================================
+var _modalOk = null, _modalCancel = null;
+function openModal(title, bodyHtml, okLabel, okCls, cancelLabel) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  var actEl = document.getElementById('modal-actions');
+  actEl.innerHTML = '';
+  if (cancelLabel) {
+    var cb = document.createElement('button');
+    cb.className = 'btn btn-outline'; cb.style.flex = '1';
+    cb.textContent = cancelLabel;
+    cb.onclick = function(){ closeModal(); if(_modalCancel) _modalCancel(); };
+    actEl.appendChild(cb);
+  }
+  var ob = document.createElement('button');
+  ob.className = 'btn ' + (okCls || 'btn-primary'); ob.style.flex = '1';
+  ob.textContent = okLabel || 'OK';
+  ob.onclick = function(){ closeModal(); if(_modalOk) _modalOk(); };
+  actEl.appendChild(ob);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
+
+// ============================================================
+// TOAST
+// ============================================================
+var _toastTimer;
+function toast(msg, type) {
+  type = type || 'info';
+  var el = document.getElementById('toast');
+  el.innerHTML = '<div class="alert alert-' + type + '" style="box-shadow:0 4px 16px rgba(0,0,0,.15);text-align:center">' + msg + '</div>';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function(){ el.innerHTML = ''; }, 3000);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('screen-' + name).classList.add('active');
+  var titles = {home:'🍡 納品書管理',delivery:'📦 納品書作成',history:'📋 履歴・修正',monthly:'🗓 月次締め',settings:'⚙ 設定'};
+  document.getElementById('header-title').textContent = titles[name] || '🍡';
+  if(name === 'home') renderHomeRecent();
+  if(name === 'history') renderHistory();
+  if(name === 'settings') renderSettings();
+}
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ============================================================
+// TAX HELPERS
+// ============================================================
+function taxTypeLabel(t) {
+  if(t === 'inc8') return '8%税込（軽減）';
+  if(t === 'ex8')  return '8%税別（軽減）';
+  return '10%税別（標準）';
+}
+function taxBadgeClass(t) {
+  if(t === 'inc8') return 'tax-badge-inc8';
+  if(t === 'ex8')  return 'tax-badge-ex8';
+  return 'tax-badge-ex10';
+}
+// items配列 → 税区分別 breakdown
+function calcTaxBreakdown(items) {
+  var groups = {};
+  items.forEach(function(it) {
+    var t = it.taxType || 'ex10';
+    if(!groups[t]) groups[t] = {taxType:t, label:taxTypeLabel(t), netAmount:0, taxAmount:0, grossAmount:0};
+    var g = groups[t];
+    if(t === 'inc8') {
+      var gross = it.subtotal;
+      var net   = Math.floor(gross / 1.08);
+      g.netAmount += net; g.taxAmount += (gross - net); g.grossAmount += gross;
+    } else {
+      var rate = (t === 'ex8') ? 0.08 : 0.10;
+      var tax  = Math.floor(it.subtotal * rate);
+      g.netAmount += it.subtotal; g.taxAmount += tax; g.grossAmount += it.subtotal + tax;
+    }
+  });
+  var result = [];
+  Object.keys(groups).forEach(function(k){ result.push(groups[k]); });
+  result.sort(function(a,b){ return a.label < b.label ? -1 : 1; });
+  return result;
+}
+function breakdownTotalGross(bd) { return bd.reduce(function(s,g){ return s+g.grossAmount; }, 0); }
+function breakdownTotalTax(bd)   { return bd.reduce(function(s,g){ return s+g.taxAmount; }, 0); }
+function breakdownTotalNet(bd)   { return bd.reduce(function(s,g){ return s+g.netAmount; }, 0); }
+
+// ============================================================
+// DELIVERY FLOW
+// ============================================================
+var cur = { clientId:null, items:{}, step:1, _docNo:null };
+
+function startDelivery() {
+  if(!db.clients.length){ toast('⚠️ 取引先を先に設定してください','warn'); return; }
+  if(!db.products.length){ toast('⚠️ 商品を先に設定してください','warn'); return; }
+  cur = { clientId:null, items:{}, step:1, _docNo:null };
+  showScreen('delivery');
+  goToStep(1);
+}
+
+function goToStep(n) {
+  if(n === 3 && !getItems().length){ toast('商品を1つ以上選択してください','warn'); return; }
+  cur.step = n;
+  document.getElementById('dstep1').style.display = n===1 ? '' : 'none';
+  document.getElementById('dstep2').style.display = n===2 ? '' : 'none';
+  document.getElementById('dstep3').style.display = n===3 ? '' : 'none';
+  [1,2,3].forEach(function(i){
+    var el = document.getElementById('step' + i);
+    el.className = 'step' + (i===n ? ' active' : i<n ? ' done' : '');
+  });
+  if(n===1) renderClientGrid();
+  if(n===2) renderProductList();
+  if(n===3) renderPreview();
+  window.scrollTo(0,0);
+}
+
+function renderClientGrid() {
+  var grid = document.getElementById('client-grid');
+  grid.innerHTML = '';
+  if(!db.clients.length){
+    grid.innerHTML='<div class="empty-state"><div class="icon">🏪</div><p>取引先が登録されていません</p></div>';
+    return;
+  }
+  var icons = ['🏪','🏬','🏢','🏨','🏦','🏩','🏫','🏭'];
+  db.clients.forEach(function(client, i){
+    var div = document.createElement('div');
+    div.className = 'client-card' + (cur.clientId===client.id ? ' selected' : '');
+    div.innerHTML = '<div class="ci">' + icons[i % icons.length] + '</div>'
+      + '<div class="cn">' + esc(client.name) + '</div>'
+      + '<div class="ct">' + (client.hasReturn ? '🔄 返品あり' : '通常取引') + '</div>';
+    div.onclick = (function(cid){ return function(){ selectClient(cid); }; })(client.id);
+    grid.appendChild(div);
+  });
+}
+
+function selectClient(id) {
+  cur.clientId = id; cur.items = {};
+  var offset = parseInt(db.settings.offset) || 0;
+  var d = new Date(); d.setDate(d.getDate() + offset);
+  goToStep(2);
+  document.getElementById('delivery-date').value = fmtDate(d);
+  document.getElementById('date-offset').value = String(offset);
+  var c = db.clients.find(function(x){ return x.id === id; });
+  document.getElementById('sel-client-badge').textContent = c ? c.name : '';
+}
+
+function applyDateOffset() {
+  var off = parseInt(document.getElementById('date-offset').value) || 0;
+  var d = new Date(); d.setDate(d.getDate() + off);
+  document.getElementById('delivery-date').value = fmtDate(d);
+}
+
+function renderProductList() {
+  var list = document.getElementById('product-list');
+  var prods = db.products.filter(function(p){
+    if(!p.clientIds || !p.clientIds.length) return true;
+    return p.clientIds.indexOf(cur.clientId) >= 0;
+  });
+  if(!prods.length){ list.innerHTML='<div class="empty-state"><div class="icon">📦</div><p>この取引先に紐付けられた商品がありません</p></div>'; updateSubtotal(); return; }
+  list.innerHTML = '';
+  prods.forEach(function(p){
+    var qty    = cur.items[p.id] || 0;
+    var txCls  = taxBadgeClass(p.taxType || 'ex10');
+    var txLbl  = taxTypeLabel(p.taxType || 'ex10');
+
+    var row = document.createElement('div');
+    row.className = 'product-row' + (qty>0 ? ' has-qty' : '');
+    row.id = 'prow-' + p.id;
+
+    var info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0';
+    info.innerHTML = '<div style="font-size:15px;font-weight:600">' + esc(p.name)
+      + ' <span class="' + txCls + '">' + txLbl + '</span></div>'
+      + '<div style="font-size:13px;color:var(--muted)">¥' + p.price.toLocaleString() + ' / ' + esc(p.unit) + '</div>';
+
+    var controls = document.createElement('div');
+    controls.className = 'qty-controls';
+
+    var btnMinus = document.createElement('button');
+    btnMinus.className = 'qty-btn'; btnMinus.textContent = '－';
+    btnMinus.onclick = (function(pid){ return function(){ chgQty(pid, -1); }; })(p.id);
+
+    var inp = document.createElement('input');
+    inp.type = 'number'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*';
+    inp.className = 'qty-input' + (qty>0 ? ' has-value' : '');
+    inp.id = 'qi-' + p.id;
+    inp.value = qty || '';
+    inp.placeholder = '0'; inp.min = '0';
+    inp.onfocus = function(){ this.select(); };
+    inp.onchange = (function(pid){ return function(){ setQty(pid, this.value); }; })(p.id);
+    inp.onblur   = (function(pid){ return function(){ setQty(pid, this.value); }; })(p.id);
+
+    var btnPlus = document.createElement('button');
+    btnPlus.className = 'qty-btn'; btnPlus.textContent = '＋';
+    btnPlus.onclick = (function(pid){ return function(){ chgQty(pid, 1); }; })(p.id);
+
+    controls.appendChild(btnMinus);
+    controls.appendChild(inp);
+    controls.appendChild(btnPlus);
+    row.appendChild(info);
+    row.appendChild(controls);
+    list.appendChild(row);
+  });
+  updateSubtotal();
+}
+
+function chgQty(pid, d) {
+  var el = document.getElementById('qi-' + pid);
+  var next = Math.max(0, (parseInt(el.value)||0) + d);
+  el.value = next || '';
+  applyQty(pid, next);
+}
+function setQty(pid, val) {
+  var next = Math.max(0, parseInt(val)||0);
+  var el = document.getElementById('qi-' + pid); if(el) el.value = next || '';
+  applyQty(pid, next);
+}
+function applyQty(pid, next) {
+  if(next===0) delete cur.items[pid]; else cur.items[pid] = next;
+  var row = document.getElementById('prow-' + pid);
+  var inp = document.getElementById('qi-' + pid);
+  if(row) row.classList[next>0?'add':'remove']('has-qty');
+  if(inp) inp.classList[next>0?'add':'remove']('has-value');
+  updateSubtotal();
+}
+function updateSubtotal() {
+  var bd = calcTaxBreakdown(getItems());
+  document.getElementById('order-subtotal').textContent = '¥' + breakdownTotalGross(bd).toLocaleString();
+}
+function getItems() {
+  return Object.keys(cur.items).filter(function(id){ return cur.items[id]>0; }).map(function(id){
+    var p = db.products.find(function(x){ return x.id===id; });
+    return p ? Object.assign({}, p, {qty:cur.items[id], subtotal:p.price * cur.items[id]}) : null;
+  }).filter(Boolean);
+}
+
+// ============================================================
+// DOCUMENT GENERATION
+// ============================================================
+function bankStr() {
+  var co = db.company;
+  if(!co.bankName && !co.bankNo) return '';
+  return [co.bankName, co.bankBranch, co.bankType||'普通', co.bankNo, co.bankHolder].filter(Boolean).join('　') + (co.bankNote ? '　' + co.bankNote : '');
+}
+
+function taxRowsHTML(breakdown, width) {
+  return breakdown.map(function(g){
+    return '<tr><td style="padding:4px ' + (width||12) + 'px;border:1px solid #eee;font-size:11px;color:#666">　消費税　' + esc(g.label) + '</td>'
+      + '<td style="padding:4px ' + (width||12) + 'px;border:1px solid #eee;text-align:right;font-size:11px;color:#666">¥' + g.taxAmount.toLocaleString() + '</td></tr>';
+  }).join('');
+}
+
+function buildSlipHTML(co, client, items, date, docNo, note) {
+  var bd    = calcTaxBreakdown(items);
+  var net   = breakdownTotalNet(bd);
+  var gross = breakdownTotalGross(bd);
+  var h     = co.honorific || '御中';
+  var bank  = bankStr();
+  var rows  = items.map(function(it, i){
+    return '<tr style="background:' + (i%2 ? '#faf8f4' : '#fff') + '">'
+      + '<td style="border:1px solid #ddd;padding:7px 10px">' + esc(it.name) + '<span style="font-size:10px;margin-left:4px;color:#888">' + taxTypeLabel(it.taxType||'ex10') + '</span></td>'
+      + '<td style="border:1px solid #ddd;padding:7px 8px;text-align:right">' + it.qty.toLocaleString() + '</td>'
+      + '<td style="border:1px solid #ddd;padding:7px 8px;text-align:center">' + esc(it.unit) + '</td>'
+      + '<td style="border:1px solid #ddd;padding:7px 8px;text-align:right">' + it.price.toLocaleString() + '</td>'
+      + '<td style="border:1px solid #ddd;padding:7px 8px;text-align:right">' + it.subtotal.toLocaleString() + '</td></tr>';
+  }).join('');
+  return '<div style="font-family:serif;font-size:13px;color:#111;max-width:680px;margin:0 auto;padding:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+      + '<div style="font-size:22px;font-weight:700;letter-spacing:.2em;border-bottom:3px double #333;padding-bottom:4px">納　品　書</div>'
+      + '<div style="text-align:right;font-size:12px;line-height:1.8">'
+        + '<div style="font-size:14px;font-weight:700">' + esc(co.name||'') + '</div>'
+        + '<div>〒' + esc(co.zip||'') + '　' + esc(co.address||'') + '</div>'
+        + (co.tel ? '<div>TEL:' + esc(co.tel) + (co.fax?' FAX:'+esc(co.fax):'') + '</div>' : '')
+        + (co.owner ? '<div>代表者：' + esc(co.owner) + '</div>' : '')
+        + (co.invoiceNo ? '<div>登録番号：' + esc(co.invoiceNo) + '</div>' : '')
+      + '</div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;margin:8px 0">'
+      + '<div><div style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:4px;display:inline-block">' + esc((client&&client.name)||'') + '　' + esc(h) + '</div>'
+        + ((client&&client.address) ? '<div style="font-size:11px;color:#555;margin-top:3px">' + esc(client.address) + '</div>' : '') + '</div>'
+      + '<div style="text-align:right;font-size:13px"><div>発行日：' + esc(date) + '</div><div>No. ' + esc(docNo) + '</div></div>'
+    + '</div>'
+    + (note ? '<div style="font-size:12px;margin-bottom:6px;color:#555">備考：' + esc(note) + '</div>' : '')
+    + '<table style="width:100%;border-collapse:collapse;margin:8px 0">'
+      + '<thead><tr style="background:#f0ebe3">'
+        + '<th style="border:1px solid #bbb;padding:7px 10px;text-align:left">品　名</th>'
+        + '<th style="border:1px solid #bbb;padding:7px 8px;text-align:right;width:65px">数量</th>'
+        + '<th style="border:1px solid #bbb;padding:7px 8px;text-align:center;width:38px">単位</th>'
+        + '<th style="border:1px solid #bbb;padding:7px 8px;text-align:right;width:80px">単価</th>'
+        + '<th style="border:1px solid #bbb;padding:7px 8px;text-align:right;width:90px">金額</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody>'
+    + '</table>'
+    + '<div style="display:flex;justify-content:flex-end">'
+      + '<table style="border-collapse:collapse;width:280px">'
+        + '<tr><td style="padding:5px 12px;border:1px solid #ddd">小計（税抜）</td><td style="padding:5px 12px;border:1px solid #ddd;text-align:right">¥' + net.toLocaleString() + '</td></tr>'
+        + taxRowsHTML(bd)
+        + '<tr style="background:#8b4513;color:#fff"><td style="padding:7px 12px;border:1px solid #8b4513;font-weight:700">合計（税込）</td><td style="padding:7px 12px;border:1px solid #8b4513;text-align:right;font-weight:700">¥' + gross.toLocaleString() + '</td></tr>'
+      + '</table>'
+    + '</div>'
+    + (bank ? '<div style="margin-top:12px;padding:8px 12px;background:#f9f6f0;border:1px solid #ddd;border-radius:6px;font-size:12px"><strong>振込先：</strong>' + esc(bank) + '</div>' : '')
+  + '</div>';
+}
+
+function buildInvoiceHTML(co, client, deliveries, retItems, retTotal, month, fmt) {
+  var h = co.honorific || '御中';
+  var isInv = (fmt === 'standard');
+  var bank = bankStr();
+  // 全納品アイテムの税区分集計
+  var allItems = [];
+  deliveries.forEach(function(dl){ if(dl.items) dl.items.forEach(function(it){ allItems.push(it); }); });
+  var bd    = calcTaxBreakdown(allItems);
+  var bdNet = breakdownTotalNet(bd);
+  var bdTax = breakdownTotalTax(bd);
+  var bdGross = breakdownTotalGross(bd);
+  // 返品分
+  var retBd  = calcTaxBreakdown(retItems);
+  var retTax = breakdownTotalTax(retBd);
+  var finalNet   = bdNet - retTotal;
+  var finalTax   = bdTax - retTax;
+  var finalTotal = finalNet + finalTax;
+  var dRows = (fmt !== 'simple') ? deliveries.map(function(dl, i){
+    return '<tr style="background:' + (i%2?'#faf8f4':'#fff') + '">'
+      + '<td style="border:1px solid #ddd;padding:6px 10px">' + esc(dl.date) + '</td>'
+      + '<td style="border:1px solid #ddd;padding:6px 10px">' + esc(dl.docNo) + '</td>'
+      + '<td style="border:1px solid #ddd;padding:6px 10px;text-align:right">¥' + dl.subtotal.toLocaleString() + '</td></tr>';
+  }).join('') : '';
+  var rRows = retItems.map(function(it){
+    return '<tr style="color:#c0392b">'
+      + '<td style="border:1px solid #ddd;padding:6px 10px" colspan="2">【返品】' + esc(it.name) + ' × ' + it.qty + '</td>'
+      + '<td style="border:1px solid #ddd;padding:6px 10px;text-align:right">-¥' + it.subtotal.toLocaleString() + '</td></tr>';
+  }).join('');
+  return '<div style="font-family:serif;font-size:13px;color:#111;max-width:680px;margin:0 auto;padding:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+      + '<div><div style="font-size:22px;font-weight:700;letter-spacing:.2em;border-bottom:3px double #333;padding-bottom:4px">' + (isInv?'適格請求書':'請　求　書') + '</div>'
+        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + ' 分　発行日：' + fmtDate(new Date()) + '</div></div>'
+      + '<div style="text-align:right;font-size:12px;line-height:1.8">'
+        + '<div style="font-size:14px;font-weight:700">' + esc(co.name||'') + '</div>'
+        + '<div>〒' + esc(co.zip||'') + '　' + esc(co.address||'') + '</div>'
+        + (co.tel ? '<div>TEL:' + esc(co.tel) + (co.fax?' FAX:'+esc(co.fax):'') + '</div>' : '')
+        + (co.owner ? '<div>代表者：' + esc(co.owner) + '</div>' : '')
+        + (isInv&&co.invoiceNo ? '<div style="font-weight:700">登録番号：' + esc(co.invoiceNo) + '</div>' : '')
+      + '</div>'
+    + '</div>'
+    + '<div style="margin:10px 0 8px"><div style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:4px;display:inline-block">' + esc((client&&client.name)||'') + '　' + esc(h) + '</div>'
+      + ((client&&client.address) ? '<div style="font-size:11px;color:#555;margin-top:3px">' + esc(client.address) + '</div>' : '') + '</div>'
+    + '<div style="text-align:center;margin:12px 0;padding:12px;border:2px solid #8b4513;border-radius:6px;background:#fff9f0">'
+      + '<div style="font-size:12px;color:#888;margin-bottom:4px">ご請求金額（税込）</div>'
+      + '<div style="font-size:26px;font-weight:700;color:#8b4513">¥' + finalTotal.toLocaleString() + '</div>'
+    + '</div>'
+    + (fmt!=='simple' ? '<table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr style="background:#f0ebe3"><th style="border:1px solid #bbb;padding:7px 10px;text-align:left">納品日</th><th style="border:1px solid #bbb;padding:7px 10px;text-align:left">伝票No.</th><th style="border:1px solid #bbb;padding:7px 10px;text-align:right">金額</th></tr></thead><tbody>' + dRows + rRows + '</tbody></table>' : '')
+    + '<div style="display:flex;justify-content:flex-end"><table style="border-collapse:collapse;width:290px">'
+      + '<tr><td style="padding:5px 12px;border:1px solid #ddd">納品合計（税抜）</td><td style="padding:5px 12px;border:1px solid #ddd;text-align:right">¥' + bdNet.toLocaleString() + '</td></tr>'
+      + (retTotal>0 ? '<tr style="color:#c0392b"><td style="padding:5px 12px;border:1px solid #ddd">返品控除</td><td style="padding:5px 12px;border:1px solid #ddd;text-align:right">-¥' + retTotal.toLocaleString() + '</td></tr>' : '')
+      + taxRowsHTML(bd)
+      + '<tr style="background:#8b4513;color:#fff"><td style="padding:7px 12px;border:1px solid #8b4513;font-weight:700">合計（税込）</td><td style="padding:7px 12px;border:1px solid #8b4513;text-align:right;font-weight:700">¥' + finalTotal.toLocaleString() + '</td></tr>'
+    + '</table></div>'
+    + (bank ? '<div style="margin-top:14px;padding:10px 14px;background:#f9f6f0;border:1px solid #ddd;border-radius:6px;font-size:12px"><strong>【振込先】</strong>　' + esc(bank) + '</div>' : '')
+  + '</div>';
+}
+
+function buildMonthlySlipHTML(co, client, deliveries, month) {
+  var h = co.honorific || '御中';
+  var bank = bankStr();
+  var pnames = [];
+  deliveries.forEach(function(dl){ if(dl.items) dl.items.forEach(function(it){ if(pnames.indexOf(it.name)<0) pnames.push(it.name); }); });
+  var allItems = [];
+  deliveries.forEach(function(dl){ if(dl.items) dl.items.forEach(function(it){ allItems.push(it); }); });
+  var bd    = calcTaxBreakdown(allItems);
+  var sub   = breakdownTotalNet(bd);
+  var gross = breakdownTotalGross(bd);
+  var hdrCells = pnames.map(function(n){ return '<th style="border:1px solid #bbb;padding:7px 8px;text-align:center;font-size:12px">' + esc(n) + '</th>'; }).join('');
+  var rows = deliveries.map(function(dl, i){
+    var cells = pnames.map(function(name){
+      var f = dl.items && dl.items.find(function(x){ return x.name===name; });
+      return '<td style="border:1px solid #ddd;padding:6px 8px;text-align:right">' + (f ? f.qty.toLocaleString() : '-') + '</td>';
+    }).join('');
+    return '<tr style="background:' + (i%2?'#faf8f4':'#fff') + '">'
+      + '<td style="border:1px solid #ddd;padding:6px 10px">' + esc(dl.date) + '</td>'
+      + '<td style="border:1px solid #ddd;padding:6px 10px">' + esc(dl.docNo) + '</td>'
+      + cells
+      + '<td style="border:1px solid #ddd;padding:6px 8px;text-align:right">¥' + dl.subtotal.toLocaleString() + '</td></tr>';
+  }).join('');
+  var totCells = pnames.map(function(name){
+    var t = deliveries.reduce(function(s,dl){ var f=dl.items&&dl.items.find(function(x){ return x.name===name; }); return s+(f?f.qty:0); }, 0);
+    return '<td style="border:1px solid #bbb;padding:6px 8px;text-align:right;font-weight:700">' + t.toLocaleString() + '</td>';
+  }).join('');
+  return '<div style="font-family:serif;font-size:13px;color:#111;max-width:680px;margin:0 auto;padding:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+      + '<div><div style="font-size:20px;font-weight:700;border-bottom:3px double #333;padding-bottom:4px">納品書（月次一覧）</div>'
+        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + ' 分</div></div>'
+      + '<div style="text-align:right;font-size:12px;line-height:1.8">'
+        + '<div style="font-size:14px;font-weight:700">' + esc(co.name||'') + '</div>'
+        + '<div>TEL:' + esc(co.tel||'') + '</div>'
+        + (co.invoiceNo ? '<div>登録番号：' + esc(co.invoiceNo) + '</div>' : '')
+      + '</div>'
+    + '</div>'
+    + '<div style="margin:8px 0 10px"><div style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:4px;display:inline-block">' + esc((client&&client.name)||'') + '　' + esc(h) + '</div></div>'
+    + '<table style="width:100%;border-collapse:collapse;margin:8px 0">'
+      + '<thead><tr style="background:#f0ebe3"><th style="border:1px solid #bbb;padding:7px 10px;text-align:left">日付</th><th style="border:1px solid #bbb;padding:7px 10px;text-align:left">伝票No.</th>' + hdrCells + '<th style="border:1px solid #bbb;padding:7px 8px;text-align:right">金額</th></tr></thead>'
+      + '<tbody>' + rows
+        + '<tr style="background:#f0ebe3;font-weight:700"><td style="border:1px solid #bbb;padding:6px 10px" colspan="2">合　計</td>' + totCells + '<td style="border:1px solid #bbb;padding:6px 8px;text-align:right">¥' + sub.toLocaleString() + '</td></tr>'
+      + '</tbody>'
+    + '</table>'
+    + '<div style="display:flex;justify-content:flex-end"><table style="border-collapse:collapse;width:280px">'
+      + '<tr><td style="padding:5px 12px;border:1px solid #ddd">小計（税抜）</td><td style="padding:5px 12px;border:1px solid #ddd;text-align:right">¥' + sub.toLocaleString() + '</td></tr>'
+      + taxRowsHTML(bd)
+      + '<tr style="background:#8b4513;color:#fff"><td style="padding:7px 12px;border:1px solid #8b4513;font-weight:700">合　計（税込）</td><td style="padding:7px 12px;border:1px solid #8b4513;text-align:right;font-weight:700">¥' + gross.toLocaleString() + '</td></tr>'
+    + '</table></div>'
+    + (bank ? '<div style="margin-top:12px;padding:8px 12px;background:#f9f6f0;border:1px solid #ddd;border-radius:6px;font-size:12px"><strong>振込先：</strong>' + esc(bank) + '</div>' : '')
+  + '</div>';
+}
+
+// ============================================================
+// PREVIEW & ISSUE
+// ============================================================
+var _preview = null;
+function genDocNo() {
+  var pfx = db.settings.prefix || 'NO-';
+  var d   = new Date();
+  var ds  = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate());
+  var n   = db.deliveries.filter(function(x){ return x.docNo && x.docNo.indexOf(pfx+ds)===0; }).length + 1;
+  return pfx + ds + '-' + pad3(n);
+}
+function renderPreview() {
+  var client = db.clients.find(function(c){ return c.id===cur.clientId; });
+  var items  = getItems();
+  var date   = document.getElementById('delivery-date').value;
+  var note   = document.getElementById('delivery-note').value;
+  if(!cur._docNo) cur._docNo = genDocNo();
+  var html = buildSlipHTML(db.company, client, items, date, cur._docNo, note);
+  document.getElementById('invoice-preview-content').innerHTML = html;
+  var bd = calcTaxBreakdown(items);
+  _preview = {html:html, docNo:cur._docNo, client:client, items:items,
+              totalNet:breakdownTotalNet(bd), totalTax:breakdownTotalTax(bd), totalGross:breakdownTotalGross(bd),
+              breakdown:bd, date:date, note:note};
+}
+function printDelivery() {
+  if(!_preview) return;
+  document.getElementById('print-area').innerHTML = _preview.html;
+  window.print();
+}
+function downloadDeliveryExcel() {
+  if(!_preview) renderPreview();
+  var p = _preview, co = db.company, bank = bankStr();
+  var wb = XLSX.utils.book_new();
+  var rows = [
+    ['納　品　書','','','',co.name||''],
+    ['No. '+p.docNo,'','','発行日:',p.date],[''],
+    [(p.client?p.client.name:'')+'　'+(co.honorific||'御中'),'','','〒'+(co.zip||'')+'　'+(co.address||'')],
+    ['','','','TEL:'+(co.tel||'')],[''],
+    ['品名','数量','単位','単価','金額','税区分']
+  ];
+  p.items.forEach(function(it){ rows.push([it.name,it.qty,it.unit,it.price,it.subtotal,taxTypeLabel(it.taxType||'ex10')]); });
+  rows.push([''],['','','','小計（税抜）',p.totalNet]);
+  p.breakdown.forEach(function(g){ rows.push(['','','','　消費税　'+g.label,g.taxAmount]); });
+  rows.push(['','','','合計（税込）',p.totalGross]);
+  if(p.note) rows.push(['備考:',p.note]);
+  if(bank)   rows.push(['振込先:',bank]);
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:22},{wch:8},{wch:6},{wch:10},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws, '納品書');
+  saveExcelFile(wb, '納品書_' + safeFile(p.client?p.client.name:'') + '_' + p.docNo + '.xlsx');
+}
+function finalizeDelivery() {
+  if(!_preview) return;
+  var p = _preview;
+  var bd = p.breakdown;
+  var rec = {
+    id: Date.now().toString(), docNo: p.docNo,
+    clientId: cur.clientId, clientName: p.client ? p.client.name : '',
+    date: p.date, note: p.note, items: p.items,
+    subtotal: p.totalNet, tax: p.totalTax, total: p.totalGross,
+    createdAt: new Date().toISOString()
+  };
+  // 同じdocNoが既にあれば上書き、なければ追加
+  var existIdx = -1;
+  for (var ei = 0; ei < db.deliveries.length; ei++) {
+    if (db.deliveries[ei].docNo === rec.docNo) { existIdx = ei; break; }
+  }
+  if (existIdx >= 0) db.deliveries[existIdx] = rec;
+  else db.deliveries.push(rec);
+  saveDB(); cur._docNo = null;
+  _modalOk = function(){ showScreen('home'); };
+  _modalCancel = function(){ cur={clientId:null,items:{},step:1,_docNo:null}; startDelivery(); };
+  openModal('✅ 発行完了', '<div class="alert alert-success">納品書 <strong>' + esc(p.docNo) + '</strong> を保存しました。</div>', 'ホームへ', 'btn-primary', '続けて作成');
+}
+
+// ============================================================
+// MONTHLY
+// ============================================================
+function clearMonthlyContent() {
+  document.getElementById('monthly-content').innerHTML = '';
+}
+
+function loadMonthlyData() {
+  var dbg = document.getElementById('monthly-debug');
+  try {
+    var monthEl = document.getElementById('monthly-month');
+    var month = monthEl ? monthEl.value : '';
+    if (dbg) dbg.textContent = 'DB:' + db.deliveries.length + '件 月:' + month;
+    if (!month) { toast('対象月を選択してください', 'warn'); return; }
+
+    var dels = [];
+    for (var i = 0; i < db.deliveries.length; i++) {
+      var rec = db.deliveries[i];
+      if (rec.date && rec.date.slice(0, 7) === month) dels.push(rec);
+    }
+
+    var content = document.getElementById('monthly-content');
+    content.innerHTML = '';
+
+    if (!dels.length) {
+      var dates = [];
+      for (var j = 0; j < db.deliveries.length; j++) dates.push(db.deliveries[j].date || '?');
+      content.innerHTML = '<div class="card"><div class="alert alert-info">📭 ' + esc(month) + ' のデータがありません。<br><small>全' + db.deliveries.length + '件 日付:' + esc(dates.join(',')) + '</small></div></div>';
+      return;
+    }
+
+    // 取引先ごとにグループ化
+    var byClient = {};
+    for (var k = 0; k < dels.length; k++) {
+      var d = dels[k];
+      if (!byClient[d.clientId]) byClient[d.clientId] = { name: d.clientName, rows: [] };
+      byClient[d.clientId].rows.push(d);
+    }
+
+    var cids = Object.keys(byClient);
+    for (var ci = 0; ci < cids.length; ci++) {
+      var cid = cids[ci];
+      var cdata = byClient[cid];
+      content.appendChild(makeClientCard(cid, cdata.name, cdata.rows));
+    }
+
+    toast('✅ ' + cids.length + '取引先を読み込みました', 'success');
+  } catch (e) {
+    if (dbg) dbg.textContent = 'ERROR: ' + (e.message || e);
+    toast('エラー: ' + (e.message || e), 'warn');
+  }
+}
+
+function makeClientCard(cid, clientName, rows) {
+  // 合計計算
+  var netTotal = 0;
+  var grossTotal = 0;
+  var allItems = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    netTotal += (r.subtotal || 0);
+    if (r.items) {
+      for (var j = 0; j < r.items.length; j++) allItems.push(r.items[j]);
+    }
+  }
+  var bd = calcTaxBreakdown(allItems);
+  grossTotal = breakdownTotalGross(bd);
+
+  var client = null;
+  for (var ci = 0; ci < db.clients.length; ci++) {
+    if (db.clients[ci].id === cid) { client = db.clients[ci]; break; }
+  }
+  var hasReturn = client && client.hasReturn;
+
+  // HTML文字列で構築（DOM操作を最小限に）
+  var rowsHtml = '';
+  for (var ri = 0; ri < rows.length; ri++) {
+    var row = rows[ri];
+    rowsHtml += '<tr><td>' + esc(row.date || '') + '</td><td>' + esc(row.docNo || '') + '</td>'
+      + '<td style="text-align:right">¥' + (row.subtotal || 0).toLocaleString() + '</td></tr>';
+  }
+
+  var bdHtml = '';
+  for (var bi = 0; bi < bd.length; bi++) {
+    bdHtml += '　' + esc(bd[bi].label) + ' 税:¥' + bd[bi].taxAmount.toLocaleString();
+  }
+
+  var retHtml = '';
+  if (hasReturn) {
+    retHtml = '<div id="ret-wrap-' + cid + '" style="background:#fff5f5;border:1px solid #fcc;border-radius:10px;padding:14px;margin-top:12px">'
+      + '<div style="font-weight:700;color:var(--danger);margin-bottom:8px">🔄 返品処理</div>'
+      + '<table style="width:100%;border-collapse:collapse"><thead><tr>';
+    var retProds = [];
+    for (var pi = 0; pi < db.products.length; pi++) {
+      var p = db.products[pi];
+      var show = !p.clientIds || !p.clientIds.length;
+      if (!show) {
+        for (var pci = 0; pci < p.clientIds.length; pci++) {
+          if (p.clientIds[pci] === cid) { show = true; break; }
+        }
+      }
+      if (show) retProds.push(p);
+    }
+    for (var rpi = 0; rpi < retProds.length; rpi++) {
+      retHtml += '<th style="border:1px solid #ddd;padding:8px;font-size:12px;text-align:center">'
+        + esc(retProds[rpi].name) + '<br>¥' + retProds[rpi].price.toLocaleString() + '</th>';
+    }
+    retHtml += '</tr></thead><tbody><tr>';
+    for (var rpi2 = 0; rpi2 < retProds.length; rpi2++) {
+      retHtml += '<td style="border:1px solid #ddd;padding:8px;text-align:center">'
+        + '<input type="number" class="return-input" id="ret-' + cid + '-' + retProds[rpi2].id
+        + '" data-cid="' + cid + '" data-net="' + netTotal + '" value="0" min="0">' 
+        + '</td>';
+    }
+    retHtml += '</tr></tbody></table>'
+      + '<div id="retsum-' + cid + '" style="text-align:right;margin-top:8px;font-size:14px">'
+      + '返品額:¥0 → 請求合計:¥' + grossTotal.toLocaleString() + '</div></div>';
+  }
+
+  var card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<div class="card-title">🏪 ' + esc(clientName)
+    + (hasReturn ? ' <span class="badge badge-return">🔄 返品あり</span>' : '') + '</div>'
+    + '<table class="month-table"><thead><tr><th>日付</th><th>伝票No.</th>'
+    + '<th style="text-align:right">金額(税抜)</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>'
+    + '<div style="text-align:right;margin-top:8px;font-size:13px">'
+    + '税抜合計:¥' + netTotal.toLocaleString() + bdHtml
+    + ' / 税込:¥' + grossTotal.toLocaleString() + '</div>'
+    + retHtml;
+
+  // ボタン行をDOM生成（クロージャでcid/netTotalを確保）
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px;margin-top:12px';
+
+  (function(id, net) {
+    var b1 = document.createElement('button');
+    b1.className = 'btn btn-outline'; b1.style.flex = '1'; b1.textContent = '🖨 印刷';
+    b1.onclick = function() { doMonthlyPrint(id, net); };
+
+    var b2 = document.createElement('button');
+    b2.className = 'btn btn-gold'; b2.style.flex = '1'; b2.textContent = '📊 Excel';
+    b2.onclick = function() { doMonthlyExcel(id, net); };
+
+    var b3 = document.createElement('button');
+    b3.className = 'btn btn-success'; b3.style.flex = '2'; b3.textContent = '✅ 請求書発行';
+    b3.onclick = function() { openInvoicePreview(id, net); };
+
+    btnRow.appendChild(b1); btnRow.appendChild(b2); btnRow.appendChild(b3);
+  })(cid, netTotal);
+
+  card.appendChild(btnRow);
+
+  // 返品inputにイベントを設定（onchangeインライン不可のため）
+  setTimeout(function() {
+    var inputs = card.querySelectorAll('.ret-input');
+    for (var ii = 0; ii < inputs.length; ii++) {
+      (function(inp) {
+        inp.onchange = function() {
+          var c2 = inp.getAttribute('data-cid');
+          var n2 = parseFloat(inp.getAttribute('data-net')) || 0;
+          onRetChange(c2, n2);
+        };
+      })(inputs[ii]);
+    }
+  }, 0);
+
+  return card;
+}
+
+function onRetChange(cid, netTotal) {
+  var retNet = 0;
+  var retItems = [];
+  for (var i = 0; i < db.products.length; i++) {
+    var p = db.products[i];
+    var el = document.getElementById('ret-' + cid + '-' + p.id);
+    var q = el ? (parseInt(el.value) || 0) : 0;
+    if (q > 0) {
+      retNet += p.price * q;
+      retItems.push({ id:p.id, name:p.name, price:p.price, taxType:p.taxType||'ex10', qty:q, subtotal:p.price*q });
+    }
+  }
+  var month = document.getElementById('monthly-month').value;
+  var allItems = [];
+  for (var j = 0; j < db.deliveries.length; j++) {
+    var d = db.deliveries[j];
+    if (d.date && d.date.slice(0,7) === month && d.clientId === cid && d.items) {
+      for (var k = 0; k < d.items.length; k++) allItems.push(d.items[k]);
+    }
+  }
+  var bd = calcTaxBreakdown(allItems);
+  var retBd = calcTaxBreakdown(retItems);
+  var finalNet = netTotal - retNet;
+  var finalTax = breakdownTotalTax(bd) - breakdownTotalTax(retBd);
+  var finalGross = finalNet + finalTax;
+  var el2 = document.getElementById('retsum-' + cid);
+  if (el2) el2.innerHTML = '返品額:¥' + retNet.toLocaleString()
+    + ' → 課税対象:¥' + finalNet.toLocaleString()
+    + ' 税:¥' + finalTax.toLocaleString()
+    + ' 税込合計:¥' + finalGross.toLocaleString();
+}
+
+function getMonthlyData(cid, netTotal) {
+  var month = document.getElementById('monthly-month').value;
+  var client = null;
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === cid) { client = db.clients[i]; break; }
+  }
+  var dels = [];
+  for (var j = 0; j < db.deliveries.length; j++) {
+    var d = db.deliveries[j];
+    if (d.date && d.date.slice(0,7) === month && d.clientId === cid) dels.push(d);
+  }
+  var retItems = [];
+  for (var k = 0; k < db.products.length; k++) {
+    var p = db.products[k];
+    var el = document.getElementById('ret-' + cid + '-' + p.id);
+    var q = el ? (parseInt(el.value) || 0) : 0;
+    if (q > 0) retItems.push({ id:p.id, name:p.name, price:p.price, taxType:p.taxType||'ex10', qty:q, subtotal:p.price*q });
+  }
+  var retTotal = 0;
+  for (var m = 0; m < retItems.length; m++) retTotal += retItems[m].subtotal;
+  return { client:client, month:month, deliveries:dels, netTotal:netTotal, retItems:retItems, retTotal:retTotal };
+}
+
+function openInvoicePreview(cid, netTotal) {
+  var d = getMonthlyData(cid, netTotal);
+  var co = db.company;
+  var fmt = document.getElementById('invoice-format').value;
+  var invHtml = buildInvoiceHTML(co, d.client, d.deliveries, d.retItems, d.retTotal, d.month, fmt);
+  var slipHtml = buildMonthlySlipHTML(co, d.client, d.deliveries, d.month);
+  var body = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">内容を確認してから出力してください。</div>'
+    + '<div class="invoice-preview">' + invHtml + '</div>';
+  _modalOk = null;
+  _modalCancel = null;
+  openModal('📄 請求書プレビュー', body, '✖ 閉じる', 'btn-outline', '');
+  setTimeout(function() {
+    var actEl = document.getElementById('modal-actions');
+    if (!actEl) return;
+    var bp = document.createElement('button');
+    bp.className = 'btn btn-outline'; bp.style.flex = '1'; bp.textContent = '🖨 印刷';
+    bp.onclick = (function(sl, inv) { return function() {
+      closeModal();
+      document.getElementById('print-area').innerHTML = '<div style="page-break-after:always">' + sl + '</div><div>' + inv + '</div>';
+      window.print();
+    }; })(slipHtml, invHtml);
+    var be = document.createElement('button');
+    be.className = 'btn btn-gold'; be.style.flex = '1'; be.textContent = '📊 Excel';
+    be.onclick = (function(id, n) { return function() { closeModal(); doMonthlyExcel(id, n); }; })(cid, netTotal);
+    actEl.insertBefore(be, actEl.firstChild);
+    actEl.insertBefore(bp, actEl.firstChild);
+  }, 30);
+}
+
+function doMonthlyPrint(cid, netTotal) { openInvoicePreview(cid, netTotal); }
+
+function doMonthlyExcel(cid, netTotal) {
+  var d = getMonthlyData(cid, netTotal);
+  var co = db.company;
+  var h = co.honorific || '御中';
+  var bank = bankStr();
+  var allItems = [];
+  for (var i = 0; i < d.deliveries.length; i++) {
+    var dl = d.deliveries[i];
+    if (dl.items) for (var j = 0; j < dl.items.length; j++) allItems.push(dl.items[j]);
+  }
+  var bd = calcTaxBreakdown(allItems);
+  var bdNet = breakdownTotalNet(bd);
+  var retBd = calcTaxBreakdown(d.retItems);
+  var finalTax = breakdownTotalTax(bd) - breakdownTotalTax(retBd);
+  var finalTotal = (bdNet - d.retTotal) + finalTax;
+
+  var wb = XLSX.utils.book_new();
+  var inv = [
+    ['請　求　書', '', '', '', co.name || ''],
+    [d.month + ' 分', '', '', '発行日:', fmtDate(new Date())],
+    ['', '', '', '〒' + (co.zip||'') + ' ' + (co.address||'')],
+    ['', '', '', 'TEL:' + (co.tel||'')],
+    [co.invoiceNo ? '登録番号:' + co.invoiceNo : ''], [''],
+    [(d.client ? d.client.name : '') + ' ' + h], [''],
+    ['ご請求金額(税込):', finalTotal], [''],
+    ['納品日', '伝票No.', '金額(税抜)']
+  ];
+  for (var di = 0; di < d.deliveries.length; di++) {
+    var dl2 = d.deliveries[di];
+    inv.push([dl2.date, dl2.docNo, dl2.subtotal]);
+  }
+  for (var ri = 0; ri < d.retItems.length; ri++) {
+    inv.push(['【返品】' + d.retItems[ri].name, '', -d.retItems[ri].subtotal]);
+  }
+  inv.push([''], ['', '納品合計(税抜)', bdNet]);
+  if (d.retTotal > 0) inv.push(['', '返品控除', -d.retTotal]);
+  for (var bdi = 0; bdi < bd.length; bdi++) inv.push(['', '消費税 ' + bd[bdi].label, bd[bdi].taxAmount]);
+  inv.push(['', '合計(税込)', finalTotal]);
+  if (bank) inv.push([''], ['【振込先】', bank]);
+  var ws1 = XLSX.utils.aoa_to_sheet(inv);
+  ws1['!cols'] = [{wch:16},{wch:20},{wch:14},{wch:6},{wch:26}];
+  XLSX.utils.book_append_sheet(wb, ws1, '請求書');
+
+  // 納品一覧シート
+  var pnames = [];
+  for (var dli = 0; dli < d.deliveries.length; dli++) {
+    var dl3 = d.deliveries[dli];
+    if (dl3.items) for (var ii = 0; ii < dl3.items.length; ii++) {
+      if (pnames.indexOf(dl3.items[ii].name) < 0) pnames.push(dl3.items[ii].name);
+    }
+  }
+  var hdr = ['納品日', '伝票No.'].concat(pnames).concat(['金額(税抜)']);
+  var dlRows = [
+    ['納品書(月次一覧)', '', '', (d.client ? d.client.name : '') + ' ' + h],
+    [d.month + ' 分'], [''], hdr
+  ];
+  for (var dli2 = 0; dli2 < d.deliveries.length; dli2++) {
+    var dl4 = d.deliveries[dli2];
+    var qtys = [];
+    for (var pni = 0; pni < pnames.length; pni++) {
+      var found = null;
+      if (dl4.items) for (var ii2 = 0; ii2 < dl4.items.length; ii2++) {
+        if (dl4.items[ii2].name === pnames[pni]) { found = dl4.items[ii2]; break; }
+      }
+      qtys.push(found ? found.qty : 0);
+    }
+    dlRows.push([dl4.date, dl4.docNo].concat(qtys).concat([dl4.subtotal]));
+  }
+  var totals = [];
+  for (var pni2 = 0; pni2 < pnames.length; pni2++) {
+    var tot = 0;
+    for (var dli3 = 0; dli3 < d.deliveries.length; dli3++) {
+      var dl5 = d.deliveries[dli3];
+      if (dl5.items) for (var ii3 = 0; ii3 < dl5.items.length; ii3++) {
+        if (dl5.items[ii3].name === pnames[pni2]) tot += dl5.items[ii3].qty;
+      }
+    }
+    totals.push(tot);
+  }
+  dlRows.push(['合計', ''].concat(totals).concat([bdNet]));
+  var ws2 = XLSX.utils.aoa_to_sheet(dlRows);
+  var cols2 = [{wch:14},{wch:18}];
+  for (var ci2 = 0; ci2 < pnames.length; ci2++) cols2.push({wch:10});
+  cols2.push({wch:14});
+  ws2['!cols'] = cols2;
+  XLSX.utils.book_append_sheet(wb, ws2, '納品一覧');
+
+  saveExcelFile(wb, '請求書_' + safeFile(d.client ? d.client.name : '') + '_' + d.month + '.xlsx');
+}
+
+
+// ============================================================
+// HISTORY & EDIT/DELETE
+// ============================================================
+function renderHomeRecent() {
+  var recent = db.deliveries.slice().reverse().slice(0,5);
+  var el = document.getElementById('home-recent');
+  if(!recent.length){ el.innerHTML=''; return; }
+  el.innerHTML = '<div class="card"><div class="card-title">🕐 最近の納品書</div>'
+    + recent.map(function(d){
+        return '<div class="list-item"><div class="list-item-main"><div class="list-item-title">' + esc(d.clientName) + '</div>'
+          + '<div class="list-item-sub">' + d.date + '　' + esc(d.docNo) + '</div></div>'
+          + '<div style="font-weight:700;color:var(--warm)">¥' + d.total.toLocaleString() + '</div></div>';
+      }).join('')
+    + '</div>';
+}
+
+function clearHistoryFilter() {
+  document.getElementById('hist-filter-client').value = '';
+  document.getElementById('hist-filter-month').value = '';
+  renderHistory();
+}
+
+function deleteEmptyDeliveries() {
+  var empties = [];
+  for (var i = 0; i < db.deliveries.length; i++) {
+    var d = db.deliveries[i];
+    var total = typeof d.total === 'number' ? d.total : (typeof d.subtotal === 'number' ? d.subtotal : 0);
+    var isEmpty = (!d.items || d.items.length === 0) && total === 0;
+    if (isEmpty) empties.push(d.docNo || d.id);
+  }
+  if (empties.length === 0) {
+    toast('空伝票はありません', 'info');
+    return;
+  }
+  _modalOk = function() {
+    var cleaned = [];
+    for (var j = 0; j < db.deliveries.length; j++) {
+      var d2 = db.deliveries[j];
+      var t2 = typeof d2.total === 'number' ? d2.total : (typeof d2.subtotal === 'number' ? d2.subtotal : 0);
+      var empty2 = (!d2.items || d2.items.length === 0) && t2 === 0;
+      if (!empty2) cleaned.push(d2);
+    }
+    db.deliveries = cleaned;
+    saveDB();
+    renderHistory();
+    renderHomeRecent();
+    toast('✅ 空伝票 ' + empties.length + '件を削除しました', 'success');
+  };
+  _modalCancel = null;
+  openModal('🗑 空伝票を削除',
+    '<div class="alert alert-warn">金額¥0・商品なしの伝票 <strong>' + empties.length + '件</strong> を削除します。<br><small style="color:#888">' + esc(empties.slice(0,10).join('、')) + (empties.length > 10 ? '…他' : '') + '</small></div>',
+    '削除する', 'btn-danger', 'キャンセル');
+}
+
+function renderHistory() {
+  var sel = document.getElementById('hist-filter-client');
+  var cv  = sel.value;
+  var opts = '<option value="">全取引先</option>';
+  for (var ci = 0; ci < db.clients.length; ci++) {
+    opts += '<option value="' + db.clients[ci].id + '">' + esc(db.clients[ci].name) + '</option>';
+  }
+  sel.innerHTML = opts;
+  sel.value = cv;
+  var fc = sel.value;
+  var fm = document.getElementById('hist-filter-month').value;
+
+  // フィルタリング（月未指定なら全件表示）
+  var list = db.deliveries.slice().reverse();
+  if (fc) {
+    var tmp = [];
+    for (var i = 0; i < list.length; i++) { if (list[i].clientId === fc) tmp.push(list[i]); }
+    list = tmp;
+  }
+  if (fm) {
+    var tmp2 = [];
+    for (var j = 0; j < list.length; j++) { if (list[j].date && list[j].date.indexOf(fm) === 0) tmp2.push(list[j]); }
+    list = tmp2;
+  }
+
+  var el = document.getElementById('history-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>該当する履歴がありません</p></div>';
+    return;
+  }
+
+  el.innerHTML = '';
+
+  // 件数・合計表示
+  var summary = document.createElement('div');
+  summary.style.cssText = 'font-size:13px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#f9f6f0;border-radius:8px';
+  summary.textContent = list.length + '件表示';
+  el.appendChild(summary);
+
+  for (var k = 0; k < list.length; k++) {
+    var d = list[k];
+    // 安全に値を取得
+    var clientName = d.clientName || '（取引先不明）';
+    var date       = d.date || '日付なし';
+    var docNo      = d.docNo || '（No.なし）';
+    var note       = d.note || '';
+    var total      = typeof d.total === 'number' ? d.total : (typeof d.subtotal === 'number' ? d.subtotal : 0);
+    var isEmpty    = (!d.items || d.items.length === 0) && total === 0;
+
+    var item = document.createElement('div');
+    item.className = 'list-item';
+    if (isEmpty) item.style.background = '#fff5f5';  // 空伝票を赤背景で強調
+
+    var mainDiv = document.createElement('div');
+    mainDiv.className = 'list-item-main';
+    mainDiv.innerHTML = '<div class="list-item-title">' + esc(clientName)
+      + (isEmpty ? ' <span style="font-size:11px;background:#fde8e8;color:var(--danger);padding:2px 8px;border-radius:10px;margin-left:6px">⚠ 空伝票</span>' : '')
+      + '</div>'
+      + '<div class="list-item-sub">' + esc(date) + '　No. ' + esc(docNo) + (note ? '　' + esc(note) : '') + '</div>';
+    item.appendChild(mainDiv);
+
+    var amtDiv = document.createElement('div');
+    amtDiv.style.cssText = 'font-weight:700;color:' + (isEmpty ? 'var(--danger)' : 'var(--warm)') + ';margin-right:8px;white-space:nowrap';
+    amtDiv.textContent = '¥' + total.toLocaleString();
+    item.appendChild(amtDiv);
+
+    var bwrap = document.createElement('div');
+    bwrap.style.cssText = 'display:flex;flex-direction:column;gap:5px;flex-shrink:0';
+
+    if (!isEmpty) {
+      var btnXl = document.createElement('button');
+      btnXl.className = 'btn btn-outline btn-sm'; btnXl.textContent = '📊 Excel';
+      btnXl.onclick = (function(rec){ return function(){ redownload(rec.id); }; })(d);
+
+      var btnEdit = document.createElement('button');
+      btnEdit.className = 'btn btn-warn btn-sm'; btnEdit.textContent = '✏️ 修正';
+      btnEdit.onclick = (function(rec){ return function(){ openEditDelivery(rec.id); }; })(d);
+
+      bwrap.appendChild(btnXl);
+      bwrap.appendChild(btnEdit);
+    }
+
+    var btnDel = document.createElement('button');
+    btnDel.className = 'btn btn-danger btn-sm'; btnDel.textContent = '🗑 削除';
+    btnDel.onclick = (function(rec){ return function(){ confirmDeleteDelivery(rec.id, rec.docNo); }; })(d);
+    bwrap.appendChild(btnDel);
+
+    item.appendChild(bwrap);
+    el.appendChild(item);
+  }
+}
+
+// 伝票削除
+var _delDeliveryId = null;
+function confirmDeleteDelivery(id, docNo) {
+  _delDeliveryId = id;
+  _modalOk = function(){
+    db.deliveries = db.deliveries.filter(function(d){ return d.id!==_delDeliveryId; });
+    saveDB(); renderHistory(); renderHomeRecent(); toast('削除しました','success');
+  };
+  _modalCancel = null;
+  openModal('🗑 伝票を削除', '<div class="alert alert-warn">伝票 <strong>' + esc(docNo) + '</strong> を削除しますか？この操作は元に戻せません。</div>', '削除する', 'btn-danger', 'キャンセル');
+}
+
+// 伝票修正
+var _editDeliveryId = null;
+function openEditDelivery(id) {
+  var rec = db.deliveries.find(function(d){ return d.id===id; });
+  if(!rec) return;
+  _editDeliveryId = id;
+
+  // モーダル本文を構築
+  var html = '<div class="form-group"><label class="form-label">納品日</label>'
+    + '<input id="edit-date" class="form-input" type="date" value="' + esc(rec.date) + '"></div>'
+    + '<div class="form-group"><label class="form-label">備考</label>'
+    + '<input id="edit-note" class="form-input" type="text" value="' + esc(rec.note||'') + '"></div>'
+    + '<div style="font-size:13px;font-weight:700;color:var(--warm);margin-bottom:10px">商品・数量</div>';
+
+  // 商品行
+  html += '<div id="edit-items">';
+  (rec.items || []).forEach(function(it){
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#faf8f4">'
+      + '<div style="flex:1;font-size:14px;font-weight:600">' + esc(it.name) + '<br>'
+      + '<span style="font-size:11px;color:var(--muted)">¥' + it.price.toLocaleString() + ' / ' + esc(it.unit) + '</span></div>'
+      + '<input type="number" id="edit-qty-' + it.id + '" value="' + it.qty + '" min="0" inputmode="numeric"'
+      + ' style="width:80px;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:16px;text-align:center;font-family:inherit" onfocus="this.select()">'
+      + '</div>';
+  });
+  html += '</div>';
+
+  _modalOk = function(){
+    var rec2 = db.deliveries.find(function(d){ return d.id===_editDeliveryId; });
+    if(!rec2) return;
+    rec2.date = document.getElementById('edit-date').value || rec2.date;
+    rec2.note = document.getElementById('edit-note').value;
+    // 数量更新
+    var newItems = (rec2.items||[]).map(function(it){
+      var inp = document.getElementById('edit-qty-' + it.id);
+      var qty = inp ? (parseInt(inp.value)||0) : it.qty;
+      return Object.assign({}, it, {qty:qty, subtotal:it.price*qty});
+    }).filter(function(it){ return it.qty > 0; });
+    rec2.items = newItems;
+    // 合計再計算
+    var bd = calcTaxBreakdown(newItems);
+    rec2.subtotal = breakdownTotalNet(bd);
+    rec2.tax      = breakdownTotalTax(bd);
+    rec2.total    = breakdownTotalGross(bd);
+    saveDB(); renderHistory(); renderHomeRecent(); toast('✅ 修正を保存しました','success');
+  };
+  _modalCancel = null;
+  openModal('✏️ 伝票を修正：' + esc(rec.docNo), html, '保存する', 'btn-primary', 'キャンセル');
+}
+
+function redownload(id) {
+  var d = db.deliveries.find(function(x){ return x.id===id; }); if(!d) return;
+  var co = db.company, bank = bankStr();
+  var wb = XLSX.utils.book_new();
+  var rows = [
+    ['納　品　書','','','',co.name||''],
+    ['No. '+d.docNo,'','','発行日:',d.date],[''],
+    [d.clientName+'　'+(co.honorific||'御中')],[''],
+    ['品名','数量','単位','単価','金額','税区分']
+  ];
+  (d.items||[]).forEach(function(it){ rows.push([it.name,it.qty,it.unit,it.price,it.subtotal,taxTypeLabel(it.taxType||'ex10')]); });
+  var bd = calcTaxBreakdown(d.items||[]);
+  rows.push([''],['','','','小計（税抜）',breakdownTotalNet(bd)]);
+  bd.forEach(function(g){ rows.push(['','','','　消費税　'+g.label,g.taxAmount]); });
+  rows.push(['','','','合計（税込）',d.total]);
+  if(bank) rows.push(['振込先:',bank]);
+  var ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:22},{wch:8},{wch:6},{wch:10},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws, '納品書');
+  saveExcelFile(wb, '納品書_' + safeFile(d.clientName) + '_' + d.docNo + '.xlsx');
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  var co = db.company;
+  var map = {'s-name':'name','s-zip':'zip','s-address':'address','s-tel':'tel','s-fax':'fax','s-owner':'owner','s-invoice-no':'invoiceNo','s-tax-rate':'taxRate','s-honorific':'honorific','s-bank-name':'bankName','s-bank-branch':'bankBranch','s-bank-type':'bankType','s-bank-no':'bankNo','s-bank-holder':'bankHolder','s-bank-note':'bankNote'};
+  Object.keys(map).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=co[map[id]]||''; });
+  var tr = document.getElementById('s-tax-rate'); if(tr&&!co.taxRate) tr.value='10';
+  var pf = document.getElementById('s-prefix'); if(pf) pf.value=db.settings.prefix||'NO-';
+  var of = document.getElementById('s-offset'); if(of) of.value=String(db.settings.offset||0);
+  renderClientsList(); renderProductsList(); renderProductClients();
+}
+function saveCompany() {
+  var map = {'name':'s-name','zip':'s-zip','address':'s-address','tel':'s-tel','fax':'s-fax','owner':'s-owner','invoiceNo':'s-invoice-no','taxRate':'s-tax-rate','honorific':'s-honorific','bankName':'s-bank-name','bankBranch':'s-bank-branch','bankType':'s-bank-type','bankNo':'s-bank-no','bankHolder':'s-bank-holder','bankNote':'s-bank-note'};
+  Object.keys(map).forEach(function(prop){ var el=document.getElementById(map[prop]); if(el) db.company[prop]=el.value; });
+  db.company.taxRate = parseInt(db.company.taxRate)||10;
+  saveDB(); toast('✅ 会社情報を保存しました','success');
+}
+function saveMisc() {
+  db.settings.prefix = document.getElementById('s-prefix').value;
+  db.settings.offset = parseInt(document.getElementById('s-offset').value)||0;
+  saveDB(); toast('✅ 設定を保存しました','success');
+}
+function addClient() {
+  var name = document.getElementById('nc-name').value.trim();
+  if(!name){ toast('取引先名を入力してください','warn'); return; }
+  db.clients.push({id:Date.now().toString(), name:name, address:document.getElementById('nc-address').value.trim(), contact:document.getElementById('nc-contact').value.trim(), hasReturn:document.getElementById('nc-return').checked});
+  saveDB();
+  document.getElementById('nc-name').value=''; document.getElementById('nc-address').value=''; document.getElementById('nc-contact').value=''; document.getElementById('nc-return').checked=false;
+  renderClientsList(); renderProductClients();
+}
+function renderClientsList() {
+  var el = document.getElementById('clients-list');
+  if(!db.clients.length){ el.innerHTML='<div class="empty-state"><div class="icon">🏪</div><p>未登録</p></div>'; return; }
+  el.innerHTML = '';
+  db.clients.forEach(function(c){
+    var item = document.createElement('div'); item.className='list-item';
+    item.innerHTML = '<div class="list-item-main"><div class="list-item-title">'+esc(c.name)+'</div><div class="list-item-sub">'+(c.address||'住所未登録')+(c.contact?'　担当:'+c.contact:'')+'</div></div>'
+      +'<span class="badge '+(c.hasReturn?'badge-return':'badge-normal')+'">'+(c.hasReturn?'🔄 返品':'通常')+'</span>';
+    var btn = document.createElement('button'); btn.className='btn btn-danger btn-sm'; btn.textContent='削除';
+    btn.onclick=(function(id){ return function(){
+      _delClientId=id; _modalOk=function(){ db.clients=db.clients.filter(function(x){return x.id!==_delClientId;}); saveDB();renderClientsList();renderProductClients(); };
+      _modalCancel=null; openModal('確認','<p>この取引先を削除しますか？</p>','削除','btn-danger','キャンセル');
+    }; })(c.id);
+    item.appendChild(btn); el.appendChild(item);
+  });
+}
+var _delClientId=null;
+
+function addProduct() {
+  var name  = document.getElementById('np-name').value.trim();
+  var price = parseInt(document.getElementById('np-price').value);
+  if(!name){ toast('商品名を入力してください','warn'); return; }
+  if(!price||price<=0){ toast('正しい単価を入力してください','warn'); return; }
+  var cbs = [].slice.call(document.querySelectorAll('#np-clients input:checked'));
+  var taxSel = document.getElementById('np-tax');
+  db.products.push({id:Date.now().toString(), name:name, price:price, unit:document.getElementById('np-unit').value.trim()||'個', taxType:taxSel?taxSel.value:'ex10', clientIds:cbs.map(function(cb){ return cb.value; })});
+  saveDB();
+  document.getElementById('np-name').value=''; document.getElementById('np-price').value=''; document.getElementById('np-unit').value='個';
+  renderProductClients(); renderProductsList();
+}
+function renderProductClients() {
+  var el = document.getElementById('np-clients'); if(!el) return;
+  if(!db.clients.length){ el.innerHTML='<span style="font-size:13px;color:var(--muted)">先に取引先を登録してください</span>'; return; }
+  el.innerHTML = db.clients.map(function(c){
+    return '<label style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap">'
+      + '<input type="checkbox" value="'+c.id+'" style="width:16px;height:16px;accent-color:var(--warm)">'+esc(c.name)+'</label>';
+  }).join('');
+}
+function renderProductsList() {
+  var el = document.getElementById('products-list');
+  if(!db.products.length){ el.innerHTML='<div class="empty-state"><div class="icon">🍡</div><p>未登録</p></div>'; return; }
+  el.innerHTML = '';
+  db.products.forEach(function(p){
+    var assigned = p.clientIds&&p.clientIds.length
+      ? p.clientIds.map(function(id){ var c=db.clients.find(function(x){ return x.id===id; }); return c?esc(c.name):null; }).filter(Boolean).join('、')
+      : '全取引先';
+    var txCls = taxBadgeClass(p.taxType||'ex10');
+    var txLbl = taxTypeLabel(p.taxType||'ex10');
+    var item = document.createElement('div'); item.className='list-item';
+    item.innerHTML = '<div class="list-item-main"><div class="list-item-title">'+esc(p.name)+' <span class="'+txCls+'">'+txLbl+'</span></div>'
+      +'<div class="list-item-sub">¥'+p.price.toLocaleString()+' / '+esc(p.unit)+'　📌 '+assigned+'</div></div>';
+    var btnEdit = document.createElement('button'); btnEdit.className='btn btn-outline btn-sm'; btnEdit.textContent='編集';
+    btnEdit.onclick=(function(pid){ return function(){ editProduct(pid); }; })(p.id);
+    var btnDel = document.createElement('button'); btnDel.className='btn btn-danger btn-sm'; btnDel.textContent='削除';
+    btnDel.onclick=(function(pid){ return function(){
+      _delProdId=pid; _modalOk=function(){ db.products=db.products.filter(function(x){return x.id!==_delProdId;}); saveDB();renderProductsList(); };
+      _modalCancel=null; openModal('確認','<p>この商品を削除しますか？</p>','削除','btn-danger','キャンセル');
+    }; })(p.id);
+    item.appendChild(btnEdit); item.appendChild(btnDel); el.appendChild(item);
+  });
+}
+var _delProdId=null, _editProdId=null;
+function editProduct(pid) {
+  _editProdId = pid;
+  var p = db.products.find(function(x){ return x.id===pid; }); if(!p) return;
+  var ids = p.clientIds||[];
+  var txSel = '<div class="form-group"><label class="form-label">税区分</label>'
+    + '<select id="ep-tax" class="form-input">'
+    + '<option value="inc8"'+(p.taxType==='inc8'?' selected':'')+'>8% 税込（軽減税率・内税）</option>'
+    + '<option value="ex8"'+(p.taxType==='ex8'?' selected':'')+'>8% 税別（軽減税率・外税）</option>'
+    + '<option value="ex10"'+(!p.taxType||p.taxType==='ex10'?' selected':'')+'>10% 税別（標準税率・外税）</option>'
+    + '</select></div>';
+  var checks = '<div class="form-group"><label class="form-label">取り扱い取引先（未チェック = 全取引先）</label><div style="display:flex;flex-direction:column;gap:8px">'
+    + db.clients.map(function(c){
+        return '<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:15px;font-weight:600">'
+          + '<input type="checkbox" class="epcc" value="'+c.id+'" '+(ids.indexOf(c.id)>=0?'checked':'')+' style="width:20px;height:20px;accent-color:var(--warm)">'+esc(c.name)+'</label>';
+      }).join('')
+    + '</div></div>';
+  _modalOk = function(){
+    var p2 = db.products.find(function(x){ return x.id===_editProdId; }); if(!p2) return;
+    var txEl = document.getElementById('ep-tax'); if(txEl) p2.taxType = txEl.value;
+    p2.clientIds = [].slice.call(document.querySelectorAll('.epcc:checked')).map(function(cb){ return cb.value; });
+    saveDB(); renderProductsList(); toast('✅ 商品設定を保存しました','success');
+  };
+  _modalCancel = null;
+  openModal('✏️ 「'+esc(p.name)+'」の設定変更', txSel+checks, '保存', 'btn-primary', 'キャンセル');
+}
+
+// ============================================================
+// DATA MANAGEMENT
+// ============================================================
+// ── データ整理：重複伝票を除去 ────────────────────────────
+function deduplicateDeliveries() {
+  var before = db.deliveries.length;
+  // 同一docNoは最後のものを残す（新しい方 = 修正済み）
+  var seen = {};
+  var cleaned = [];
+  for (var i = db.deliveries.length - 1; i >= 0; i--) {
+    var d = db.deliveries[i];
+    var key = d.docNo || d.id;
+    if (!seen[key]) {
+      seen[key] = true;
+      cleaned.unshift(d);
+    }
+  }
+  // ¥0 かつ items が空の伝票も除去（誤保存）
+  var final = [];
+  for (var j = 0; j < cleaned.length; j++) {
+    var rec = cleaned[j];
+    var hasItems = rec.items && rec.items.length > 0;
+    var hasAmount = (rec.total || 0) > 0 || (rec.subtotal || 0) > 0;
+    if (hasItems || hasAmount) final.push(rec);
+  }
+  var after = final.length;
+  var removed = before - after;
+  db.deliveries = final;
+  saveDB();
+  renderHomeRecent();
+  _modalOk = null;
+  openModal('🔧 整理完了',
+    '<div class="alert alert-success">整理前：' + before + '件<br>整理後：' + after + '件<br>削除：' + removed + '件（重複・空データ）</div>',
+    'OK', 'btn-primary', '');
+}
+
+function exportData() {
+  var blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='wagashi_backup_'+fmtDate(new Date())+'.json'; a.click();
+}
+var _importPending = null;
+function importData(ev) {
+  var file = ev.target.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      _importPending = JSON.parse(e.target.result);
+      _modalOk = function(){ db=_importPending; saveDB(); renderSettings(); toast('✅ インポート完了','success'); };
+      _modalCancel = null;
+      openModal('確認','<p>バックアップデータをインポートします。現在のデータは上書きされます。</p>','インポート','btn-primary','キャンセル');
+    }catch(err){ toast('❌ ファイルの読み込みに失敗しました','warn'); }
+  };
+  reader.readAsText(file); ev.target.value='';
+}
+function clearData() {
+  _modalOk = function(){ db=emptyDB(); saveDB(); renderSettings(); toast('データを消去しました','success'); };
+  _modalCancel = null;
+  openModal('⚠️ 全データを消去','<p style="color:var(--danger);font-weight:600">すべてのデータが削除されます。元に戻せません。</p>','全削除する','btn-danger','キャンセル');
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function pad(n){ return n<10?'0'+n:String(n); }
+function pad3(n){ return n<10?'00'+n:n<100?'0'+n:String(n); }
+function safeFile(s){ return String(s||'').replace(/[\/\\:*?"<>|]/g,'_'); }
+
+// ── Excel保存共通関数 ─────────────────────────────────────
+// iPad Safari: navigator.share() があれば共有シート経由でiCloud Drive等の
+// 任意フォルダに保存可能。非対応環境は従来のダウンロードにフォールバック。
+function saveExcelFile(wb, filename) {
+  try {
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    if (navigator.share && navigator.canShare) {
+      var file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: filename })
+          .catch(function(err) {
+            // ユーザーがキャンセルした場合などはフォールバックしない（再試行不要）
+            if (err && err.name !== 'AbortError') {
+              fallbackDownload(blob, filename);
+            }
+          });
+        return;
+      }
+    }
+    fallbackDownload(blob, filename);
+  } catch (e) {
+    toast('Excel保存エラー: ' + (e.message || e), 'warn');
+  }
+}
+
+function fallbackDownload(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(function(){
+  var now = new Date();
+  var m = now.getFullYear() + '-' + pad(now.getMonth()+1);
+  document.getElementById('monthly-month').value = m;
+  document.getElementById('hist-filter-month').value = m;
+  renderHomeRecent();
+})();
+</script>
+</body>
+</html>
