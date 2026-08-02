@@ -728,7 +728,7 @@ function buildInvoiceHTML(co, client, deliveries, retItems, retTotal, month, fmt
   return '<div style="font-family:serif;font-size:13px;color:#111;max-width:680px;margin:0 auto;padding:16px">'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       + '<div><div style="font-size:22px;font-weight:700;letter-spacing:.2em;border-bottom:3px double #333;padding-bottom:4px">' + (isInv?'適格請求書':'請　求　書') + '</div>'
-        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + ' 分　発行日：' + fmtDate(new Date()) + '</div></div>'
+        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + '　発行日：' + fmtDate(new Date()) + '</div></div>'
       + '<div style="text-align:right;font-size:12px;line-height:1.8">'
         + '<div style="font-size:14px;font-weight:700">' + esc(co.name||'') + '</div>'
         + '<div>〒' + esc(co.zip||'') + '　' + esc(co.address||'') + '</div>'
@@ -782,7 +782,7 @@ function buildMonthlySlipHTML(co, client, deliveries, month) {
   return '<div style="font-family:serif;font-size:13px;color:#111;max-width:680px;margin:0 auto;padding:16px">'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       + '<div><div style="font-size:20px;font-weight:700;border-bottom:3px double #333;padding-bottom:4px">納品書（月次一覧）</div>'
-        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + ' 分</div></div>'
+        + '<div style="font-size:12px;margin-top:4px;color:#555">' + esc(month) + '</div></div>'
       + '<div style="text-align:right;font-size:12px;line-height:1.8">'
         + '<div style="font-size:14px;font-weight:700">' + esc(co.name||'') + '</div>'
         + '<div>TEL:' + esc(co.tel||'') + '</div>'
@@ -1153,7 +1153,7 @@ function doMonthlyExcel(cid, netTotal) {
   var wb = XLSX.utils.book_new();
   var inv = [
     ['請　求　書', '', '', '', co.name || ''],
-    [d.month + ' 分', '', '', '発行日:', fmtDate(new Date())],
+    [d.month + '', '', '', '発行日:', fmtDate(new Date())],
     ['', '', '', '〒' + (co.zip||'') + ' ' + (co.address||'')],
     ['', '', '', 'TEL:' + (co.tel||'')],
     [co.invoiceNo ? '登録番号:' + co.invoiceNo : ''], [''],
@@ -1188,7 +1188,7 @@ function doMonthlyExcel(cid, netTotal) {
   var hdr = ['納品日', '伝票No.'].concat(pnames).concat(['金額(税込)']);
   var dlRows = [
     ['納品書(月次一覧)', '', '', (d.client ? d.client.name : '') + ' ' + h],
-    [d.month + ' 分'], [''], hdr
+    [d.month + ''], [''], hdr
   ];
   for (var dli2 = 0; dli2 < d.deliveries.length; dli2++) {
     var dl4 = d.deliveries[dli2];
